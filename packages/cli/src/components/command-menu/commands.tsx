@@ -5,46 +5,92 @@ export const COMMANDS: Command[] = [
     name: 'new',
     description: 'Start a new conversation',
     value: '/new',
+    action(ctx) {
+      ctx.toast.show({
+        message: 'Starting a new conversation...',
+      })
+    },
   },
   {
     name: 'agents',
     description: 'Switch between agents',
     value: '/agents',
+    action(ctx) {
+      ctx.toast.show({
+        message: 'Switching agents...',
+      })
+    },
   },
   {
     name: 'models',
     description: 'Select AI model for generation',
     value: '/models',
+    action(ctx) {
+      ctx.toast.show({
+        message: 'Selecting AI model...',
+      })
+    },
   },
   {
     name: 'sessions',
     description: 'Browse past sessions',
     value: '/sessions',
+    action(ctx) {
+      ctx.toast.show({
+        message: 'Browsing past sessions...',
+      })
+    },
   },
   {
     name: 'theme',
     description: 'Change color theme',
     value: '/theme',
+    action(ctx) {
+      ctx.toast.show({
+        message: 'Changing color theme...',
+      })
+    },
   },
   {
     name: 'login',
     description: 'Sign in with your browser',
     value: '/login',
+    action(ctx) {
+      ctx.toast.show({
+        message: 'Opening browser to sign in...',
+      })
+    },
   },
   {
     name: 'logout',
     description: 'Logout of the application',
     value: '/logout',
+    action(ctx) {
+      ctx.toast.show({
+        message: 'Logged out',
+        variant: 'success',
+      })
+    },
   },
   {
     name: 'upgrade',
     description: 'Buy more credits',
     value: '/upgrade',
+    action(ctx) {
+      ctx.toast.show({
+        message: 'Opening upgrade page...',
+      })
+    },
   },
   {
     name: 'usage',
     description: 'Open billing portal on the browser',
     value: '/usage',
+    action(ctx) {
+      ctx.toast.show({
+        message: 'Opening billing portal...',
+      })
+    },
   },
   {
     name: 'exit',
