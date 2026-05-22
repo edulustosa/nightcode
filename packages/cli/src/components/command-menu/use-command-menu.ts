@@ -4,12 +4,14 @@ import { type ScrollBoxRenderable } from '@opentui/core'
 
 import { getFilteredCommands } from './filter-command'
 import type { Command } from './types'
+import { useKeyboardLayer } from '../../providers/keyboard-layer'
 
 export function useCommandMenu() {
   const [textValue, setTextValue] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [showCommandMenu, setShowCommandMenu] = useState(false)
   const scrollRef = useRef<ScrollBoxRenderable>(null)
+  const { pop, push, isTopLayer } = useKeyboardLayer()
 
   const commandQuery =
     showCommandMenu && textValue.startsWith('/') ? textValue.slice(1) : ''
@@ -18,6 +20,11 @@ export function useCommandMenu() {
     () => getFilteredCommands(commandQuery),
     [commandQuery],
   )
+
+  const close = () => {
+    setShowCommandMenu(false)
+    pop('command')
+  }
 
   const handleContentChange = (text: string) => {
     setTextValue(text)
@@ -31,25 +38,33 @@ export function useCommandMenu() {
     const prefix = text.startsWith('/') ? text.slice(1) : null
     if (prefix !== null && !prefix.includes(' ')) {
       setShowCommandMenu(true)
+      push('command', () => {
+        close()
+        return true
+      })
       return
     }
 
-    setShowCommandMenu(false)
+    close()
   }
 
   const resolveCommand = (index: number): Command | undefined => {
     const command = filteredCommands[index]
     if (command) {
-      setShowCommandMenu(false)
+      close()
     }
 
     return command
   }
 
   useKeyboard((key) => {
-    if (!showCommandMenu) return
+    if (!showCommandMenu || !isTopLayer('command')) return
 
     switch (key.name) {
+      case 'escape':
+        key.preventDefault()
+        close()
+        break
       case 'enter':
         key.preventDefault()
         resolveCommand(selectedIndex)

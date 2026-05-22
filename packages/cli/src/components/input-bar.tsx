@@ -3,10 +3,12 @@ import { useRenderer } from '@opentui/react'
 import { TextareaRenderable, type KeyBinding } from '@opentui/core'
 
 import { useCommandMenu } from './command-menu/use-command-menu'
+import { useToast } from '../providers/toast'
+import { useKeyboardLayer } from '../providers/keyboard-layer'
+import { useDialog } from '../providers/dialog'
 import { StatusBar } from './status-bar'
 import { CommandMenu } from './command-menu'
 import type { Command } from './command-menu/types'
-import { useToast } from '../providers/toast'
 
 interface InputBarProps {
   onSubmit: (value: string) => void
@@ -14,10 +16,15 @@ interface InputBarProps {
 }
 
 const TEXTAREA_KEY_BINDINGS: KeyBinding[] = [
-  { name: 'return', ctrl: true, action: 'submit' },
-  { name: 'enter', ctrl: true, action: 'submit' },
-  { name: 'return', action: 'newline' },
-  { name: 'enter', action: 'newline' },
+  // Ctrl+J (LF, 0x0a) is byte-distinct from Enter — works on every terminal.
+  { name: 'j', ctrl: true, action: 'newline' },
+  // Shift+Enter newline only fires on terminals speaking the Kitty keyboard
+  // protocol (kitty, WezTerm, Ghostty, iTerm2...). Harmless elsewhere.
+  { name: 'return', shift: true, action: 'newline' },
+  { name: 'enter', shift: true, action: 'newline' },
+  // Plain Enter submits.
+  { name: 'return', action: 'submit' },
+  { name: 'enter', action: 'submit' },
 ]
 
 export function InputBar({ onSubmit, disabled = false }: InputBarProps) {
@@ -25,6 +32,8 @@ export function InputBar({ onSubmit, disabled = false }: InputBarProps) {
   const onSubmitRef = useRef<() => void>(() => {})
   const renderer = useRenderer()
   const toast = useToast()
+  const dialog = useDialog()
+  const { isTopLayer, setResponder } = useKeyboardLayer()
 
   const {
     commandQuery,
@@ -69,6 +78,7 @@ export function InputBar({ onSubmit, disabled = false }: InputBarProps) {
             renderer.destroy()
           },
           toast,
+          dialog,
         })
         return
       }
@@ -78,10 +88,13 @@ export function InputBar({ onSubmit, disabled = false }: InputBarProps) {
     [renderer, toast],
   )
 
-  const handleCommandExecute = useCallback((index: number) => {
-    const command = resolveCommand(index) 
-    handleCommand(command)
-  }, [resolveCommand, handleCommand])
+  const handleCommandExecute = useCallback(
+    (index: number) => {
+      const command = resolveCommand(index)
+      handleCommand(command)
+    },
+    [resolveCommand, handleCommand],
+  )
 
   useEffect(() => {
     const textarea = textareaRef.current
@@ -103,6 +116,24 @@ export function InputBar({ onSubmit, disabled = false }: InputBarProps) {
 
     handleSubmit()
   }
+
+  useEffect(() => {
+    setResponder('base', () => {
+      if (disabled) return false
+
+      const textarea = textareaRef.current
+      if (textarea && textarea.plainText.length > 0) {
+        textarea.setText('')
+        return true
+      }
+
+      return false
+    })
+
+    return () => {
+      setResponder('base', null)
+    }
+  }, [disabled, setResponder])
 
   return (
     <box width="100%" alignItems="center">
@@ -137,7 +168,7 @@ export function InputBar({ onSubmit, disabled = false }: InputBarProps) {
 
           <textarea
             ref={textareaRef}
-            focused={!disabled}
+            focused={!disabled && (isTopLayer('base') || isTopLayer('command'))}
             keyBindings={TEXTAREA_KEY_BINDINGS}
             onContentChange={handleTextareaContentChange}
             placeholder={`Ask anything... "Fix a bug in the database"`}
