@@ -1,9 +1,10 @@
 import { createContext, useCallback, useContext, useState } from 'react'
-
-import type { DialogConfig } from './types'
-import { useKeyboardLayer } from '../keyboard-layer'
 import { useKeyboard, useTerminalDimensions } from '@opentui/react'
 import { RGBA, TextAttributes } from '@opentui/core'
+
+import { useKeyboardLayer } from '../keyboard-layer'
+import { useTheme } from '../theme'
+import type { DialogConfig } from './types'
 
 export type DialogContextValue = {
   open: (config: DialogConfig) => void
@@ -62,10 +63,10 @@ interface DialogProps {
 function Dialog({ currentDialog, close }: DialogProps) {
   const { isTopLayer } = useKeyboardLayer()
   const dimensions = useTerminalDimensions()
+  const { colors } = useTheme()
 
   useKeyboard((key) => {
     if (!currentDialog || !isTopLayer('dialog')) return
-
     if (key.name === 'escape') close()
   })
 
@@ -89,7 +90,7 @@ function Dialog({ currentDialog, close }: DialogProps) {
       <box
         width={Math.min(60, dimensions.width - 4)}
         height="auto"
-        backgroundColor="#1A1A24"
+        backgroundColor={colors.dialogSurface}
         paddingX={4}
         paddingY={1}
         flexDirection="column"
